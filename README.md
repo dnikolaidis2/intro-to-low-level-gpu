@@ -1,4 +1,7 @@
-# Auto-Vk-Toolkit-Starter
+# Introduction to low-level GPU programming
+[Slide deck](https://drive.google.com/file/d/1a4sZPuMsVZ_cFdLfrGa2ue6UMDpj2ELu/view?usp=drive_link)
+
+## Auto-Vk-Toolkit-Starter
 A template for cross-platform [Auto-Vk-Toolkit](https://github.com/cg-tuwien/Auto-Vk-Toolkit) projects using CMake as build system.
 
 *Auto-Vk-Toolkit* is a rendering framework for the Vulkan 1.2 API, implemented in modern C++, using C++17 and C++20 features.     
