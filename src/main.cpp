@@ -1,30 +1,45 @@
 #include <auto_vk_toolkit.hpp>
 #include <imgui.h>
 
-class triangle : public avk::invokee
+class square : public avk::invokee
 {
 public: // v== avk::invokee overrides which will be invoked by the framework ==v
-	triangle(avk::queue& aQueue)
+	square(avk::queue& aQueue)
 	: mQueue{ &aQueue }
 	{}
 
 	void initialize() override
 	{
-		std::vector<glm::vec3> triangleVertices {
-			glm::vec3{ 0.0f, -0.5f, 1.0f},
-			glm::vec3{ 0.5f,  0.5f, 1.0f},
-			glm::vec3{-0.5f,  0.5f, 1.0f},
+		std::vector<glm::vec2> squareVertices {
+			glm::vec2{-0.5f, -0.5f},
+			glm::vec2{ 0.5f,  0.5f},
+			glm::vec2{-0.5f,  0.5f},
+			glm::vec2{ 0.5f, -0.5f},
 		};
+
+		std::vector<uint32_t> squareIndices {
+			0, 1, 2,
+			0, 3, 1
+		};
+
 		mVertexBuffer = avk::context().create_buffer(
 			avk::memory_usage::device, {},
-			avk::vertex_buffer_meta::create_from_data(triangleVertices)
+			avk::vertex_buffer_meta::create_from_data(squareVertices)
 		);
 
-		auto vrtxFillCmd = mVertexBuffer->fill(triangleVertices.data(), 0);
+		auto vrtxFillCmd = mVertexBuffer->fill(squareVertices.data(), 0);
+
+		mIndexBuffer = avk::context().create_buffer(
+			avk::memory_usage::device, {},
+			avk::index_buffer_meta::create_from_data(squareIndices)
+		);
+
+		auto idxFillCmd = mIndexBuffer->fill(squareIndices.data(), 0);
 
 		// Submit all the fill commands to the queue:
 		auto fence = avk::context().record_and_submit_with_fence({
 			 std::move(vrtxFillCmd),
+			 std::move(idxFillCmd),
 		 }, *mQueue);
 		// Wait on the host until the device is done:
 		fence->wait_until_signalled();
@@ -37,7 +52,7 @@ public: // v== avk::invokee overrides which will be invoked by the framework ==v
 			avk::fragment_shader("shaders/basic.frag"),
 			// The next 3 lines define the format and location of the vertex shader inputs:
 			// (The dummy values (like glm::vec3) tell the pipeline the format of the respective input)
-			avk::from_buffer_binding(0) -> stream_per_vertex<glm::vec3>() -> to_location(0), // <-- corresponds to vertex shader's inPosition
+			avk::from_buffer_binding(0) -> stream_per_vertex<glm::vec2>() -> to_location(0), // <-- corresponds to vertex shader's inPosition
 			// Some further settings:
 			avk::cfg::culling_mode::disabled,
 			avk::cfg::viewport_depth_scissors_config::from_framebuffer(avk::context().main_window()->backbuffer_reference_at_index(0)),
@@ -105,7 +120,8 @@ public: // v== avk::invokee overrides which will be invoked by the framework ==v
 		avk::context().record({
 			avk::command::render_pass(mPipeline->renderpass_reference(), avk::context().main_window()->current_backbuffer_reference(), {
 				avk::command::bind_pipeline(mPipeline.as_reference()),
-				avk::command::draw_vertices(3, 1, 0, 0, mVertexBuffer.as_reference()),
+				avk::command::draw_indexed(mIndexBuffer.as_reference(), mVertexBuffer.as_reference())
+				//avk::command::draw(3, 1, 0, 0, mVertexBuffer.as_reference()),
 				})
 		})
 		.into_command_buffer(cmdBfr)
@@ -125,6 +141,7 @@ private: // v== Member variables ==v
 	avk::queue* mQueue;
 	avk::graphics_pipeline mPipeline;
 	avk::buffer mVertexBuffer;
+	avk::buffer mIndexBuffer;
 }; // triangle
 
 int main() // <== Starting point ==
@@ -134,7 +151,7 @@ int main() // <== Starting point ==
 		// Create a window and open it
 		auto mainWnd = avk::context().create_window("Model Loader");
 
-		mainWnd->set_resolution({ 1000, 480 });
+		mainWnd->set_resolution({640, 640 });
 		mainWnd->enable_resizing(true);
 		mainWnd->set_presentaton_mode(avk::presentation_mode::mailbox);
 		mainWnd->set_number_of_concurrent_frames(3u);
@@ -145,7 +162,7 @@ int main() // <== Starting point ==
 		mainWnd->set_present_queue(singleQueue);
 
 		// Create an instance of our main avk::element which contains all the functionality:
-		auto app = triangle(singleQueue);
+		auto app = square(singleQueue);
 		// Create another element for drawing the UI with ImGui
 		auto ui = avk::imgui_manager(singleQueue);
 

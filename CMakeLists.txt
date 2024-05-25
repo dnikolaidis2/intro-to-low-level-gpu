@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.13)
-project(first_triangle)
+project(first_square)
 
 if (MSVC)
     # <ranges> support requires /std:c++latest on MSVC
